@@ -1,0 +1,75 @@
+---
+title: "Class 05"
+author: "Amelia Hopkins"
+date: "2026-09-09"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_download: true
+    code_folding: show
+    theme: simplex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Game 01: Subsetting Lists
+
+```{r game01}
+campus = jsonlite::fromJSON(
+  "https://isa401-find-your-seat.vercel.app/campus.json")
+
+names(campus) # shows the named elements within a list (or vector) or the cols in a data frame
+
+fsb = campus$Farmer # saving the named farmer list in FSB
+# equivalent campus[['Farmer']] by name or campus[[5]] by position
+fsb$code
+
+fsb[[8]]$`2`$sections
+
+sec_floor = fsb[[8]]$`2`
+
+sec_floor_rooms = sec_floor[[3]]
+sec_floor_rooms[6, 2]
+sec_floor_rooms[6, 'isa_sections']
+```
+
+## Reading the Excel File
+
+```{r occupations}
+occupation = readxl::read_excel(
+  path = "../data/occupation.xlsx",
+  sheet = 5, # sheet = "Table 1.4"
+  skip = 1
+)
+# - when you subset in R drops these specific things
+# given that they are three, I put them in a vector
+# notice the "," after the parentheses
+# nothing is after the comma which means I want to keep all columns
+# instead of that space, I could have put 1:7 which means I want to keep columns 1 - 7
+occupation = occupation[-c(32,33,34),]
+# alternatively
+occupation = occupation[1:31, ]
+```
+
+## How to Read JSON Data
+```{r read_json}
+json_url = "https://data.cincinnati-oh.gov/resource/rvmt-pkmq.json?$limit=100"
+crashes_json = jsonlite::fromJSON(json_url)
+dplyr::glimpse(crashes_json)
+```
+
+## Data Import for Cybersecurity Game
+
+```{r}
+logins = readr::read_csv("../data/stage1.csv")
+log = jsonlite::fromJSON("https://isa401-import-heist.vercel.app/api/stage2?key=smithj31")
+
+jsonlite::fromJSON("https://isa401-import-heist.vercel.app/api/finish?code=6")
+
+
+events_df = log$events # 6 files were downloaded
+
+```
