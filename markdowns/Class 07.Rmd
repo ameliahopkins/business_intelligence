@@ -1,0 +1,153 @@
+---
+title: "Class 07"
+author: "Amelia Hopkins"
+date: "2026-09-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(DBI)
+library(RSQLite)
+library(lubridate)
+
+con <- dbConnect(RSQLite::SQLite(), "M:/ISA 401/business_intelligence/business_intelligence/data/scout.db")
+```
+
+# Data Wrangling Using dplyr
+
+```{r}
+# Monday, Part 1: SQL, typed by you
+DBI::dbGetQuery(con, "
+  SELECT company, COUNT(*) AS n
+  FROM scout_postings
+  WHERE remote = 1
+  GROUP BY company
+  ORDER BY n DESC
+  LIMIT 10")
+
+# Today: dplyr, on the data frame from dbReadTable()
+
+postings <- DBI::dbReadTable(con, "scout_postings")
+postings |>
+  dplyr::filter(remote == 1) |>
+  dplyr::count(company, sort = TRUE) |>
+  head(10)
+```
+
+# select() Choosing Columns
+
+```{r}
+con = DBI::dbConnect(RSQLite::SQLite(), "../data/scout.db")
+postings = DBI::dbReadTable(con, "scout_postings") |> tibble::as_tibble()
+DBI::dbDisconnect(con)
+
+jobs = postings |>
+  dplyr::select(company,location_state, remote, posted_at, last_seen_at) |>
+  dplyr::filter(remote == 1) |>
+  dplyr::mutate(
+    posted_at = as.Date(posted_at),
+    last_seen_at = as.Date(last_seen_at),
+    days_open = as.numeric(last_seen_at - posted_at)
+    )
+```
+
+## Demo
+```{r}
+con = DBI::dbConnect(RSQLite::SQLite(), "../data/scout.db")
+postings = DBI::dbReadTable(con, "scout_postings") |> tibble::as_tibble()
+DBI::dbDisconnect(con)
+
+jobs = postings |>
+  dplyr::select(company, title, location_state, remote, category, posted_at, last_seen_at) |>
+  dplyr::mutate(dplyr::across(dplyr::ends_with("_at"), as.Date),
+                days_open = as.numeric(last_seen_at - posted_at))
+
+jobs
+
+# Q1 -- which cat is remote friendly
+# To answer that, the logic would be as follows
+# - Find the number of jobs per category
+# - Normalize the number of jobs by dividing by the total jobs
+
+jobs |>
+  # I want to move from unit of analysis being a job posting to a category
+  dplyr::group_by(category) |>
+  dplyr::summarise(
+    postings = dplyr::n(),
+    remote_share = mean(remote)
+  )
+
+# Among full-time postings, which states have the highest remote share
+# Based on the vote in class, I will deviate from the answer in the slide
+# by showing the combination of category and state -- this will still give you the answer you want
+
+jobs |>
+  dplyr::group_by(category, location_state) |>
+  dplyr::summarise(postings = dplyr::n(),
+    remote_share = mean(remote) |> round(digits = 2)
+    ) |>
+  dplyr::arrange(dplyr::desc(remote_share)) |>
+  na.omit() # to drop the location_state == NA (this will also drop any other rows that contain NA)
+
+# Notes logic
+jobs|>
+  dplyr::filter(category == 'fulltime') |>
+  dplyr::summarise(
+    postings = dplyr::n(),
+    remote_share = mean(remote) |> round(digits = 2)
+  ) |>
+  dplyr::arrange(dplyr::desc(remote_share)) |>
+  na.omit()
+
+
+```
+
+## Airbnb
+
+```{r}
+con = DBI::dbConnect(RSQLite::SQLite(), "../data/midwest_airbnb.db")
+listings = DBI::dbReadTable(con, "listings") |>
+  tibble::as_tibble()
+DBI::dbDisconnect(con)
+dplyr::glimpse(listings)
+
+# 1. How many listings per city?
+## If the answer is purely based on last class, I can group by city and then count the number of listings in each city
+
+listings |> dplyr::group_by(city) |> dplyr::summarise(count = dplyr::n())
+# Alternatively, the shortcut for the code above would be
+listings |> dplyr::count(city) # count does group by and then n()
+
+# The other option is to simply count the number of times each city occurred in the col city
+table(listings$city) # returns a named vector vs above we get a data.frame/tibble
+
+# 2. For entire homes, (room_type == 'Entire home/apt") that sleep four or more, what is the median price in each city?
+
+listings |>
+  dplyr::filter(
+    room_type == "Entire home/apt" & accommodates >=4
+  ) |>
+  dplyr::group_by(city) |>
+  dplyr::summarise(
+    median_price = median(price)
+  )
+
+# 3. Add price_per_person = price / accomodates. Which three listings are cheapest per person? Believe them?
+
+listings |>
+  dplyr::mutate(price_per_person = price / accommodates) |>
+  # for the sake of printing nicely, I will reduce the number of cols
+  dplyr::select(city, host_name, name, price, accommodates, price_per_person) |>
+  dplyr::arrange(price_per_person) |>
+  tail(3) # alternatively, head(3) would show the first three rows
+
+# Which five host_names have the most listings? [FYI -- host names are not unique]
+# host_ids are
+
+listings |> dplyr::count(host_name, sort = T)
+
+```
+
+
