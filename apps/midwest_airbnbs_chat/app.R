@@ -16,4 +16,9 @@ qc = querychat::querychat(
   greeting = "Ask me about Midwest Airbnb Listings."
 )
 
-qc$app()
+shiny::runApp(
+  appDir = qc$app_obj(),
+  host = "0.0.0.0",
+  port = as.integer(Sys.getenv("PORT", "10000")),
+  launch.browser = FALSE
+)
