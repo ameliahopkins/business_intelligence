@@ -17,7 +17,7 @@ qc = querychat::querychat(
 )
 
 shiny::runApp(
-  qc$app_obj(),
+  appDir = qc$app_obj(),
   host = "0.0.0.0",
   port = as.integer(Sys.getenv("PORT", "10000")),
   launch.browser = FALSE
