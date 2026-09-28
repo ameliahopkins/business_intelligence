@@ -91,3 +91,10 @@ Then open http://localhost:7860.
 ## Course Information
 
 This application was developed for **ISA 401** at **Miami University**. The polished version of the same idea, built on BLS wage data, is the [OEWS Jobs Explorer](https://huggingface.co/spaces/fmegahed/querychat_demo).
+
+## Assignment 06
+1) 198 hosts have 10 or more listings across the three cities, showing that a notable number of hosts manage multiple properties.
+2) 31.9% of Chicago listings are held by hosts with 10 or more listings, indicating that nearly one-third of Chicago's listings are controlled by large hosts.
+3) North Linden has a median price per person of $32.55 for qualifying family sized entire homes, making it the lowest priced Columbus neighborhood among those with at least 20 qualifying listings.
+4) The top 10% of Columbus listings earn 36.1% of the city's estimated revenue, showing that a relatively small group of listing accounts for over 1/3 of estimated revenue
+5) Chicago has 267 listings with no availability data, the most of the three cities and more than half of the 456 listings missing availability data overall.
