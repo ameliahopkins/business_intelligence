@@ -12,6 +12,8 @@ short_description: Ask questions about ChatISA Job Scout postings
 
 # ISA 401 Job Scout Chat
 
+**Live app:** https://midwest-airbnb-chat-tdtg.onrender.com/
+
 **Ask a question in plain English, get the SQL and a table back**
 
 A twelve-line [querychat](https://github.com/posit-dev/querychat) app built in ISA 401 (Miami University) on the job postings that [ChatISA](https://chatisa.fsb.miamioh.edu) Job Scout collected. It is the starting point for Assignment 05, where you deploy this app to Hugging Face Spaces and then improve it.
