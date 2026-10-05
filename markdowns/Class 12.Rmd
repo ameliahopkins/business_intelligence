@@ -1,0 +1,93 @@
+---
+title: "Class 12: Structured Text Extraction with LLMs"
+author: "Amelia Hopkins"
+date: "2026-10-05"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_download: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Continuing with the Plane Crash Info Example
+
+```{r crashes, results='hold'}
+year = 2025
+
+crash_url = paste0('https://www.planecrashinfo.com/', year, '/', year, '.htm')
+
+crash_page <- rvest::read_html(crash_url, encoding = "ISO-8859-1")
+
+# This should now print without the error
+crash_page
+
+## {html_document}
+## <html>
+## [1] <head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8 ...
+## [2] <body>\n<p align="center"><b><font face="Arial" color="#B0B6FF" size="5"> ...
+
+# How many <table> elements are on the page?
+crash_tables <- crash_page |>
+  rvest::html_elements("table") |>
+  rvest::html_table()
+
+# From a cleaning perspective:
+# [1] Obviously, translate this into a DF instead of a list
+# [2] To replace the current headers with row 1 and then delete row
+# [3] Convert Date into a date column instead of chr
+# [4] More complex cleaning to split multiple information within a cell into separate columns (outside the scope of today's class -- feel free to try AI or regular expressions if you are in 414)
+
+# Back to our pepper shaker analogy
+crash_df = crash_tables[[1]] # subsetting a list
+
+colnames(crash_df) = crash_df[1, ]
+crash_df = crash_df[-1, ]
+
+# Convert date columns into a date type object
+crash_df = crash_df |>
+  dplyr::mutate(Date = lubridate::dmy(Date))
+
+dplyr::glimpse(crash_df)
+```
+
+
+## Practice: Salvage Run
+
+```{r game}
+page = rvest::read_html("https://isa401-salvage.vercel.app/registry?start=1")
+classes = page |>
+  rvest::html_elements(".Dreadnought") |>
+  rvest::html_text2()
+length(classes)   # check this first: one per card
+
+base = "https://isa401-salvage.vercel.app"
+starts = seq(from = 1, to = 351 , by = 50)
+pages = vector("list", length(starts)) # Initializing the list [similar to initializing the df]
+for (i in seq_along(starts)) {
+  pg = rvest::read_html(paste0(base, "/registry?start=", starts[i]))
+  pages[[i]] = data.frame(
+    class = pg |> rvest::html_elements("div > ul > li:nth-child(1) > span") |>
+      rvest::html_text2(),
+    value = pg |> rvest::html_elements("div > ul > li:nth-child(3) > span") |>
+      rvest::html_text2() |> readr::parse_number()
+  )
+  Sys.sleep(1)   # robots.txt asks for it
+}
+registry = dplyr::bind_rows(pages)   # 400 rows?
+
+dreadnought_df = registry |>
+  dplyr::filter(class == "Dreadnought")
+
+sum(dreadnought_df$value)
+
+```
+
+
+
