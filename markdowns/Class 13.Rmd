@@ -1,0 +1,49 @@
+---
+title: 'Class 13: Tidy and Technically Correct Data'
+author: "Amelia Hopkins"
+date: "2026-10-07"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_download: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Plane Crash Example
+
+<https://www.planecrashinfo.com/2025/2025.htm>
+
+## ```{r tidy_tc_crashes}
+year = 2025
+
+crash_url = paste0('https://www.planecrashinfo.com/', year, '/', year, '.htm')
+
+crash_page <- rvest::read_html(crash_url, encoding = "ISO-8859-1")
+
+# What we learned last class is that if I were to read this as an HTML table, I have no control onw hat goes into each column in teh resulting data frame -- this makes cleaning it (extracting text from it) more challenging
+
+crash_page |>
+  rvest::html_elements("td:nth-child(1) > font > a") |>
+  rvest::html_text2() -> dates
+
+crash_page |>
+  rvest::html_elements("td:nth-child(2) > font") |>
+  rvest::html_text2() -> loc_op
+
+# Skipped column 3 exactly similar for time purposes
+crash_page |>
+  rvest::html_elements("td:nth-child(4) > font") |>
+  rvest::html_text2() -> fatalities
+
+df = data.frame(dates = dates, location = loc_op[-1], fatalities = fatalities[-1]) |>
+  tidyr::separate(
+    loc_op, into = c("location", "operator", sep = "\n")
+  )
+```
+
