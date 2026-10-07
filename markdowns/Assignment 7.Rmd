@@ -1,0 +1,141 @@
+---
+title: 'Assignment 07: Scraping FSB Directory'
+author: "Amelia Hopkins"
+date: "2026-10-07"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_download: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r faculty}
+library(rvest)
+
+faculty_url <- "https://miamioh.edu/fsb/directory/?up=/query/all/all/Accountancy/all"
+
+faculty_page <- read_html(faculty_url)
+
+faculty_tables <- faculty_page |>
+  html_elements("table") |>
+  html_table()
+
+accountancy_df <- faculty_tables[[1]]
+
+faculty_rows <- faculty_page |>
+  html_elements("table tr") |>
+  tail(-1)
+
+faculty_names <- faculty_rows |>
+  html_element("td:nth-child(3) a") |>
+  html_text(trim = TRUE)
+
+head(faculty_names)
+
+faculty_websites <- faculty_rows |>
+  html_element("td:nth-child(3) a") |>
+  html_attr("href")
+
+faculty_websites <- xml2::url_absolute(
+  faculty_websites,
+  faculty_url
+)
+
+head(faculty_websites)
+
+faculty_positions <- faculty_rows |>
+  html_element("td:nth-child(3) i") |>
+  html_text2()
+
+head(faculty_positions)
+
+faculty_positions <- stringr::str_squish(faculty_positions)
+
+accountancy_df <- data.frame(
+  department = accountancy_df$Department,
+  name = faculty_names,
+  position = faculty_positions,
+  website = faculty_websites
+)
+
+head(accountancy_df)
+```
+
+```{r}
+departments <- c(
+  "Accountancy",
+  "Economics",
+  "Entrepreneurship",
+  "Finance",
+  "Information Systems -- Analytics",
+  "Marketing",
+  "Management"
+)
+
+all_faculty <- data.frame()
+
+for(dept in departments) {
+  
+  faculty_url <- paste0(
+    "https://miamioh.edu/fsb/directory/?up=/query/all/all/", 
+    URLencode(dept, reserved = TRUE),
+    "/all"
+  )
+  
+  faculty_page <- read_html(faculty_url)
+  
+  faculty_rows <- faculty_page |>
+    html_elements("table tr") |>
+    tail(-1)
+  
+  faculty_names <- faculty_rows |>
+    html_element("td:nth-child(3) a") |>
+    html_text(trim = TRUE)
+  
+  faculty_positions <- faculty_rows |>
+    html_element("td:nth-child(3) i") |>
+    html_text2() |>
+    stringr::str_squish()
+  
+  faculty_websites <- faculty_rows |>
+    html_element("td:nth-child(3) a") |>
+    html_attr("href") |>
+    xml2::url_absolute(faculty_url)
+  
+  department_names <- faculty_rows |>
+    html_element("td:nth-child(1)") |>
+    html_text2()
+  
+  dept_df <- data.frame(
+    department = department_names,
+    name = faculty_names,
+    position = faculty_positions,
+    website = faculty_websites
+  )
+  
+  print(dept)
+  print(faculty_url)
+  print(table(dept_df$department))
+  
+  all_faculty <- rbind(all_faculty, dept_df)
+  
+}
+
+all_faculty <- unique(all_faculty)  
+
+head(all_faculty)
+  
+  table(all_faculty$department)
+  
+  colSums(is.na(all_faculty))
+  
+  sum(duplicated(all_faculty))
+```
+
+
